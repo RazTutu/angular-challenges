@@ -1,6 +1,5 @@
+/* eslint-disable @typescript-eslint/no-empty-function */
 import { Component, Input } from '@angular/core';
-import { StudentStore } from '../../data-access/student.store';
-import { TeacherStore } from '../../data-access/teacher.store';
 import { CardType } from '../../model/card.model';
 
 @Component({
@@ -19,17 +18,7 @@ export class ListItemComponent {
   @Input() id!: number;
   @Input() name!: string;
   @Input() type!: CardType;
+  @Input() delete!: (id: number) => void;
 
-  constructor(
-    private teacherStore: TeacherStore,
-    private studentStore: StudentStore,
-  ) {}
-
-  delete(id: number) {
-    if (this.type === CardType.TEACHER) {
-      this.teacherStore.deleteOne(id);
-    } else if (this.type === CardType.STUDENT) {
-      this.studentStore.deleteOne(id);
-    }
-  }
+  constructor() {}
 }

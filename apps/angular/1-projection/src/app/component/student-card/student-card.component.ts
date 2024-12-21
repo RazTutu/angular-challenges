@@ -1,5 +1,8 @@
-import { Component, OnInit } from '@angular/core';
-import { FakeHttpService } from '../../data-access/fake-http.service';
+import { Component, CUSTOM_ELEMENTS_SCHEMA, OnInit } from '@angular/core';
+import {
+  FakeHttpService,
+  randStudent,
+} from '../../data-access/fake-http.service';
 import { StudentStore } from '../../data-access/student.store';
 import { CardType } from '../../model/card.model';
 import { Student } from '../../model/student.model';
@@ -11,7 +14,14 @@ import { CardComponent } from '../../ui/card/card.component';
     <app-card
       [list]="students"
       [type]="cardType"
-      customClass="bg-light-green"></app-card>
+      [store]="store"
+      [addNewItem]="addNewItem"
+      [delete]="delete"
+      customClass="bg-light-green">
+      <card-image>
+        <img src="assets/img/student.webp" width="200px" />
+      </card-image>
+    </app-card>
   `,
   styles: [
     `
@@ -21,6 +31,7 @@ import { CardComponent } from '../../ui/card/card.component';
     `,
   ],
   imports: [CardComponent],
+  schemas: [CUSTOM_ELEMENTS_SCHEMA],
 })
 export class StudentCardComponent implements OnInit {
   students: Student[] = [];
@@ -28,12 +39,22 @@ export class StudentCardComponent implements OnInit {
 
   constructor(
     private http: FakeHttpService,
-    private store: StudentStore,
-  ) {}
+    public store: StudentStore,
+  ) {
+    this.delete = this.delete.bind(this);
+    this.addNewItem = this.addNewItem.bind(this);
+  }
 
   ngOnInit(): void {
     this.http.fetchStudents$.subscribe((s) => this.store.addAll(s));
-
     this.store.students$.subscribe((s) => (this.students = s));
+  }
+
+  delete(id: number) {
+    this.store.deleteOne(id);
+  }
+
+  addNewItem() {
+    this.store.addOne(randStudent());
   }
 }
