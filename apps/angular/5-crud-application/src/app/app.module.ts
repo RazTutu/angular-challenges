@@ -1,0 +1,13 @@
+import { NgModule } from '@angular/core';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+// ...existing code...
+
+@NgModule({
+  imports: [
+    // ...existing code...
+    MatProgressSpinnerModule,
+    // ...existing code...
+  ],
+  // ...existing code...
+})
+export class AppModule {}

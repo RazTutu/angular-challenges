@@ -1,50 +1,80 @@
 import { CommonModule } from '@angular/common';
-import { HttpClient } from '@angular/common/http';
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, signal, WritableSignal } from '@angular/core';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { randText } from '@ngneat/falso';
+import { TodoService } from './todo.service';
+
+export interface ToDo {
+  userId: number;
+  id: number;
+  title: string;
+  completed: boolean;
+  body: string;
+}
 
 @Component({
-  imports: [CommonModule],
+  imports: [CommonModule, MatProgressSpinnerModule],
   selector: 'app-root',
   template: `
-    <div *ngFor="let todo of todos">
+    <mat-spinner *ngIf="loading"></mat-spinner>
+    <div *ngFor="let todo of todos()">
       {{ todo.title }}
       <button (click)="update(todo)">Update</button>
+      <button (click)="delete(todo)">Delete</button>
     </div>
   `,
   styles: [],
 })
 export class AppComponent implements OnInit {
-  todos!: any[];
+  todos: WritableSignal<ToDo[]> = signal([]);
+  loading = false;
 
-  constructor(private http: HttpClient) {}
+  constructor(private toDoService: TodoService) {}
 
   ngOnInit(): void {
-    this.http
-      .get<any[]>('https://jsonplaceholder.typicode.com/todos')
-      .subscribe((todos) => {
-        this.todos = todos;
-      });
+    this.loading = true;
+    this.toDoService.getTodos().subscribe(
+      (todos) => {
+        this.todos.set(todos);
+        this.loading = false;
+      },
+      (error) => {
+        console.error('Error fetching todos:', error);
+        this.loading = false;
+      },
+    );
   }
 
-  update(todo: any) {
-    this.http
-      .put<any>(
-        `https://jsonplaceholder.typicode.com/todos/${todo.id}`,
-        JSON.stringify({
-          todo: todo.id,
-          title: randText(),
-          body: todo.body,
-          userId: todo.userId,
-        }),
-        {
-          headers: {
-            'Content-type': 'application/json; charset=UTF-8',
-          },
-        },
-      )
-      .subscribe((todoUpdated: any) => {
-        this.todos[todoUpdated.id - 1] = todoUpdated;
-      });
+  update(todo: ToDo) {
+    this.loading = true;
+    const updatedTodo = { ...todo, title: randText() };
+    this.toDoService.updateTodo(updatedTodo).subscribe(
+      (updated) => {
+        this.todos.update((currentTodos) =>
+          currentTodos.map((t) => (t.id === updated.id ? updated : t)),
+        );
+        this.loading = false;
+      },
+      (error) => {
+        console.error('Error updating todo:', error);
+        this.loading = false;
+      },
+    );
+  }
+
+  delete(todo: ToDo) {
+    this.loading = true;
+    this.toDoService.delete(todo).subscribe(
+      () => {
+        this.todos.update((currentTodos) =>
+          currentTodos.filter((t) => t.id !== todo.id),
+        );
+        this.loading = false;
+      },
+      (error) => {
+        console.error('Error deleting todo:', error);
+        this.loading = false;
+      },
+    );
   }
 }
